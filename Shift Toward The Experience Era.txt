@@ -1,0 +1,217 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 > "Experience isn't merely the best teacher; it's the only teacher... there are no shortcuts."\
+\
+Ted Chiang, The Lifecycle of Software Objects\
+\
+## Part I : Artificial Sawtooth Intelligence\
+\
+> A day in heaven is a year on earth\
+\
+This line from Journey to the West perfectly captures the astonishing pace of Large Language Model (LLM) development. Like black holes warping our spacetime:\
+\
+1.  The rapid advancement of AI has created an existential crisis for AI benchmarks\'97each new benchmark is swiftly conquered, rendering it seemingly obsolete.\
+2.  Apple reported that Google search volume in Safari has declined for the first time, while ChatGPT's Monthly Active Users (MAU) has soared to 500M, matching X's user base.\
+3.  ChatGPT's Daily Active Users to Monthly Active Users (DAU/MAU) ratio has surged to Reddit-level engagement\\[2\\], showing that AI has become an integral part of users' daily routines.\
+4.  Standards are proliferating: Following ChatGPT and Gemini's adoption of the Model Control Protocol (MCP), virtually every technical component now offers multiple MCP Server implementations. The Agent-to-Agent (A2A) protocol has emerged as a natural evolution.\
+\
+A striking trend is the rapidly blurring line between AI models and applications. AI startups are achieving remarkable growth\'97Flowith (formerly GenSpark) reached $10 million Annual Recurring Revenue (ARR) in just nine days. The Coding Agents segment has been particularly explosive, with Cursor leading a wave of products targeting diverse user segments. However, tech giants are making aggressive moves: Google has launched comprehensive Agent infrastructure and AI applications alongside its latest Gemini models, integrating them into all flagship products\'97from search to Gmail and Chrome. Meanwhile, OpenAI has clearly declared its intention to become a product company serving 1 billion users. They've demonstrated this resolve by acquiring WindSurf and Jony Ive's AI hardware company, launching their own Coding Agent product alongside Anthropic, and steadily integrating Agent capabilities (memory, search, tool use, etc.) into ChatGPT. This raises a growing concern: are startups merely exploring Product-Market Fit for OpenAI and other tech giants? Do only foundation model companies stand a chance?\
+\
+This article tries to approach these questions through two lenses. First, we'll examine the capabilities and recent developments of foundation models, which are the fundamental drivers of AI applications. Second, we'll explore the opportunities and challenges that AI applications face, based on our understanding of these foundation models.\
+\
+## General Recipe\
+\
+> _\'93Everyone will have their Lee Sedol moment\'94_\
+\
+Noam Brown\
+\
+The approach of LLM training now has relatively \'93standard\'94 steps. Andrej Karpathy has created an excellent, easy-to-follow video\\[3\\] explaining this topic \'97essential viewing for anyone interested in understanding what happens behind LLM. Without delving into technical details, let's outline the key stages in a typical training pipeline:\
+\
+*   Massive Pre-training: Models are first trained on enormous corpora of text (and other data) in a self-supervised way. This yields a base model with broad book knowledge and linguistic fluency.\
+*   Supervised Fine-Tuning (Instruction Tuning): The base model is then refined on curated datasets of example question-answer or instruction-response pairs. This "teaches" the model to follow human instructions (as in GPT-3 \uc0\u8594  ChatGPT transitions).\
+*   Reinforcement Learning: This is the last major stage in training LLMs, where the model learns through trial and error to optimize its responses based on rewards. \uc0\u8288 However, lots of problem domains are \'93unverifiable\'94, like poetry writing and joke telling, where the quality of answers cannot be automatically determined, this is where the Reinforcement Learning with Human Feedback(RLHF) comes to play: humans preferences are used to rate models\'92 multiple outputs for correctness or quality, and a policy is trained to maximize that reward. This aligns the model to human preferences and reduces undesirable outputs (e.g. hallucinations) without changing its knowledge base.\
+\
+After these steps, the model is nearly ready for use. However, during inference, various techniques can further enhance its performance, including Chain-of-Thought (CoT) prompts, self-consistency checks, and self-reflection. The ReAct method, for example, enables the model to "think" while interacting with the environment, which significantly improves its problem-solving abilities.\
+\
+Among all these steps, the recent progress in RL has been the most notable, especially the method known as Reinforcement Fine Tuning (RFT)\\[4\\]. It's believed OpenAI DeepResearch is a product built upon a special RFT version of O3 model. This method significantly enhances AI applications' capabilities in specialized domains, making it a powerful approach for building AI agents.\
+\
+We can understand what LLMs learn from each training phase as: pre-training builds foundational knowledge, while post-training standardizes behavior patterns. RFT then transforms these generalist models into Subject Matter Experts.\
+\
+The key distinction between RFT and SFT lies in their training methodologies.\
+\
+SFT (Supervised Fine-Tuning) is more like having a teacher explain examples step-by-step. You start by preparing loads of high-quality input-output pairs and then have the model imitate these "standard answers." This method converges quickly and allows control over the output style, but it clearly has some drawbacks:\
+\
+*   High data costs: Every new domain requires thousands of examples annotated by humans.\
+*   Limited generalization: The model typically memorizes the "right way," so it struggles whenever the question types or scoring criteria slightly change.\
+\
+RFT, on the other hand, resembles students doing tons of practice questions with teachers grading their answers. Learning is slower but leads to a much deeper understanding\'97or in AI terms, better generalization. Here, developers just need to implement one or more graders (scoring scripts) that evaluate the model based on measurable factors, such as passing unit tests, verifying facts, or complying with output standards. These scores then serve as rewards for reinforcement learning updates, leading to three key advantages:\
+\
+*   Less annotation effort: You don't need huge numbers of human-labeled examples, just clear rules or scripts to define good and bad outcomes.\
+*   Bias toward functional correctness: Optimization is directly linked to "task success," not merely imitating human-written examples. This gives RFT stronger generalization capabilities compared to SFT, especially for tasks involving coding, math questions, or complex tool interactions.\
+*   Progressive iteration: Developers can continuously refine their graders\'97adding new unit tests, enhancing security checks\'97allowing the model to improve incrementally without needing to re-annotate the entire dataset (as noted by Louis-Fran\'e7ois Bouchard, aka What\'92s AI).\
+\
+The main difference between RFT and RLHF is that RFT uses explicitly computable rules for feedback, while RLHF relies on trained reward models that simulate human preferences. In simpler terms, RFT rewards are based on clear "judgment criteria," pushing the model to concentrate directly on task accuracy rather than mimicking human language style. This makes it particularly suited to objective, right-or-wrong scenarios like mathematics, programming, or law.\
+\
+The progress in RL has greatly strengthened AI researchers' confidence. Shunyu Yao, the OpenAI researcher/ReAct author, argues in his latest blog The Second Half\\[1\\] that we have converged into a general recipe of AI development: with \'93the right RL priors (language pre-training)\'93, \'a0and the proper RL environment \'93by adding reasoning into the action space\'94, RL can make \'93**language generalizes through reasoning in agents\'94.** Or to put it in plain language, with the help of LLM and reasoning, RL can generalize and continuously improve.\
+\
+As proof, Yao pointed out that \'93**The recipe has essentially standardized and industried benchmark hillclimbing without requiring much more new ideas.** As the recipe scales and generalizes well, your novel method for a particular task might improve it by 5%, while the next o-series model improves it by 30% without explicitly targeting it.\'93\
+\
+![](https://cdn.prod.website-files.com/6819d7492ce82f6effd70b97/686826b3d6032085ca4dc20f_Progress%20on%20AI%20benchmarks%20in%20the%20past%20five%20years.png)\
+\
+Further, at the Sequoia AI Ascent 2025\\[2\\], OpenAI researcher Dan Roberts presented an "Agent Capability Index" curve, claiming that since 2019, **the duration AI agents can autonomously handle tasks has been doubling every seven months\'97a trend dubbed the "new Moore's Law for AI agents."** By linearly extending this trend, Roberts suggests that by 2034, agents could autonomously perform tasks comparable to "Einstein discovering general relativity." There's reason to take OpenAI seriously here, considering they've reportedly prepared subscription packages priced at $2,000 and $20,000 per month aimed precisely at this future. Similarly, Anthropic CEO Dario Amodei stated that by around 2026, we might have AI systems "smarter than most Nobel laureates."\
+\
+![](https://cdn.prod.website-files.com/6819d7492ce82f6effd70b97/686826c85d2483b93d07108d_The%20Length%20of%20Tasks%20AI%20Can%20Do%20is%20Doubling%20Every%207%20Months.png)\
+\
+But not everyone buys this vision, though\\[13\\]. HuggingFace's Chief Science Officer Thomas Wolf criticized Amodei\'92s forecast as "wishful thinking at best." Wolf points out that humanity's greatest scientific breakthroughs come from asking entirely unprecedented questions\'97not merely from answering known ones. On another note, the idea that complete intelligence can emerge solely from language intuition seems questionable. **Linguist Edward Gibson, speaking with Lex Friedman, noted that the part of the human brain responsible for language appears independent from the parts handling logical reasoning\\[5\\].**\
+\
+Super intelligence or not\uc0\u65311 The reality might lie somewhere in between \'97 \'a0Let\'92s check it out.\
+\
+## Sawtooth Intelligence\
+\
+> _\'93In their world, as in ours, the greatest danger is not ignorance, but the illusion of knowledge.\'94_\
+\
+Isaac Asimov, The Gods Themselves\
+\
+When talking about AGI/ASI, one common question is whether the Scaling Law still holds. However, this question isn't particularly meaningful because the definition has evolved multiple times since it was proposed in 2022\'97from pre-training, to post-training, to test time computing. Perhaps someone will even propose a fourth iteration of the Scaling Law by bundling agent features like tool use and memory. A more relevant question might be: comparing with human intelligence, which capabilities does this emerging intelligence already have, and which ones still need work? Judging by internal mechanisms, real-world performance, and direct comparisons with the human brain, current AI capabilities appear "sawtooth-shaped," showing highly uneven development across different dimensions.\
+\
+**Discoveries in AI "Biology"**\
+\
+Anthropic\'92s attribution graph study\\[11\\] is shedding light on what the model is actually doing internally. Think of it as building a microscope for AI: when Claude answers a question, researchers trace how hidden "features" activate and flow to produce the output. The findings are fascinating. For example, when asked "What is the capital of the state containing Dallas?", Claude\'92s internal reasoning wasn\'92t a blur \'96 it activated a "Dallas" feature, then a "Texas" feature, and finally "Austin" as the answer. In other words, it performed an explicit two-step reasoning (Dallas\uc0\u8594 Texas, Texas\u8594 Austin) entirely internally, much like a person would, and the attribution graph made that reasoning visible.\
+\
+Another striking case: Claude was tasked with writing a multi-line rhymed poem. The attribution analysis revealed that before composing even the first line, Claude had already planned key rhyming words for later lines. For instance, it pre-selected candidate rhymes ("moon" and "June") and embedded that plan into its generation process. In short, Claude "planned ahead" \'96 a clear sign of latent reasoning. These observations show that the model can form latent conceptual plans, not just emit word-by-word text. It behaves more like a chain-of-thought, even if we don\'92t see it explicitly.\
+\
+However, it's also found that Claude's generated Chain-of-Thought (CoT) explanations don't always faithfully reflect its true reasoning process. In other words, sometimes the model\'92s reasoning steps are just cobbled together to make the final answer seem reasonable, rather than genuinely deriving the answer step-by-step, which is named as "unfaithful reasoning." In cases that requires rigorous logic\'97such as complex mathematical proofs or causal inference\'97LLMs may rely on pattern matching rather than true understanding. It\'92s like when people intuitively guess an answer first and then invent reasons afterward to justify that guess.\
+\
+More seriously, RFT hasn\'92t overcome this limitation. A joint research team from Tsinghua and Shanghai Jiao Tong University, in their paper "Does Reinforcement Learning Really Incentivize Reasoning Beyond the Base Model?"\\[10\\], compared multiple models and found that the "reasoning paths" of RL-trained models were already present in the base model\'92s random sampling distribution. RL doesn't teach models new types of reasoning\'97it merely selectively emphasizes the correct reasoning paths that the base model can already produce. For instance, RL fine-tuned models significantly outperform base models in terms of Pass@1 accuracy (correctness on the first attempt). However, if the base models are allowed to sample multiple times, their ultimate ability to find the correct answer (high Pass@k) isn\'92t inferior at all. **This demonstrates that RL mainly reorders the output distribution to make correct answers appear more frequently, but the "ceiling" remains limited by the original capabilities of the base model.** The paper further points out that the mechanism by which RL improves performance essentially biases model outputs towards paths likely to score higher, trading off diversity for increased accuracy. Consequently, the reasoning boundary of RL-tuned models may actually become narrower. This conclusion rings an alarm bell for the limits of the "general recipe": RL has not enabled models to transcend their inherent limitations or learn genuinely new reasoning skills.\
+\
+Another paper by Stanford and Tsinghua researchers titled "Four Habits of Highly Effective STaRs"\\[9\\] indirectly supports this view. They compared the performance of two models in RL-based self-improvement tasks: the Qwen-2.5-3B model made significant improvements in a mathematical game via RL, while the LLaMA-3.2-3B showed limited progress. Upon deeper analysis, the researchers found that Qwen inherently possessed certain effective "cognitive habits"\'97such as verifying solutions autonomously, backtracking upon encountering contradictions, decomposing tasks into subtasks, and backward reasoning from goals. These habits resemble strategies used by human experts and were termed the "four effective reasoning habits." In contrast, LLaMA initially lacked these behavioral patterns. It explains why some models (like Qwen) easily advance through RL self-improvement, while others (like LLaMA) stall: if a base model doesn\'92t inherently possess these foundational reasoning habits, even extensive RL rewards struggle to elevate it. In human terms, it's like saying that if someone doesn't naturally have a certain talent, no amount of later training can fully compensate for it.\
+\
+**Lack of Temporal and Spatial Cognition**\
+\
+A second sawtooth aspect is that LLM-based agents have very limited real-world experience. They have read immense quantities of text, but no continuous sensorimotor life. They lack true concepts of time passing or physical space. Recent demonstrations bring this to light:\
+\
+Anthropic streamed Claude 3.7 playing Pok\'e9mon Red on Twitch\\[6\\]. Claude could "reason" through puzzles and even earn three gym badges, whereas the older Claude 3.5 couldn\'92t leave the first town. But at the same time, Claude\'92s behavior was painfully slow and myopic. At one point, hours into the stream, Claude hit a rock wall and stubbornly tried to walk through it over and over. Only after many futile attempts did it finally learn to go around. To the outside observer it was excruciatingly slow \'96 "traverse\\[ing\\] Pok\'e9mon Red with the speed of a Slowpoke".\
+\
+Why the struggle? Unlike humans, Claude has no innate map of the virtual world and no persistent memory from earlier in the game. It can only "see" the current screen and make a decision; it doesn\'92t remember the maze it navigated yesterday or infer that unseen walls are impassable. The bottom line is that current LLMs have no experiential common sense about the physical world or spatial topology. And it isn't very sensible to time\
+\
+Gemini, Google's AI agent, demonstrates a similar pattern with an interesting variation. Developer Joel Z used Gemini 2.5 Pro to play Pok\'e9mon Blue, and the AI's completion of the game\\[7\\] was highlighted as a breakthrough by Google's CEO at the latest Google I/O. However, this wasn't truly autonomous gameplay\\[8\\]. Instead, Gemini relied on an "agent harness"\'97a system that provided the AI with processed screenshots featuring helpful overlays, then asked it to choose actions which a program converted into button presses. This meant Gemini wasn't experiencing the game as a human would, but rather interacting with a preprocessed version. Furthermore, Joel acknowledged stepping in occasionally to guide Gemini's reasoning when it encountered difficulties. In essence, Gemini's success came within a supportive training framework that offered considerable assistance. While this remained an impressive feat\'97showcasing Gemini's capacity for long-term strategy and adaptability\'97the article's conclusion was telling: "we're still a long way from the kind of envisioned future where an Artificial General Intelligence can figure out a way to beat Pok\'e9mon just because you asked it to."\
+\
+**The "Intelligence Gap": Humans vs Base Agents**\
+\
+Researchers from the MetaGPT project\\[14\\] have proposed analyzing intelligent agents through a "brain-inspired modular architecture", drawing parallels to functional regions of the human brain. For instance, the human brain has the hippocampus dedicated to memory, the occipital lobe responsible for visual and spatial processing, and the limbic system involved in emotion and motivation. So, how do LLM-based agents perform across these analogous modules?\
+\
+![](https://cdn.prod.website-files.com/6819d7492ce82f6effd70b97/68682706312a422007bf2d2d_Semianalysis%20GPU%20Cloud%20ClusterMAXTM%20Rating%20March%202026.png)\
+\
+Good news: these LLM models are extremely capable on linguistic, logical, and knowledge-based tasks, often rivaling or surpassing humans (for example, passing bar exams or writing code).\
+\
+Bad news: there are still lots of grounds to be covered.\
+\
+For instance, consider memory and world-modeling. The human brain has a hippocampus for long-term memory; we continuously update autobiographical memory. In contrast, an LLM has only a limited context window and no persistent internal state(external memory technologies like RAG are different from the brain's built-in memory - they are more like a computer loading data from hard drive to RAM for program use). The MetaGPT survey explicitly highlights memory and world modeling as core components that agents lack.\
+\
+Similarly, the sensory and spatial modules are underdeveloped. Humans learn spatial concepts by moving around. LLMs without vision or embodied sensors have at best a fragmented view of the world. Even multimodal models that can "see" still process images flatly, with no inherent sense of three-dimensional layout. Asking a GPT to draw a 3D scene from description or to imagine how an object looks when rotated is extremely challenging.\
+\
+Essentially, LLMs are living in "text space" and only know the world via descriptions.\
+\
+Finally, there is the issue of goal orientation and planning. Today\'92s LLM agents are weak in this regard: they simply react round by round to each prompt, without an overarching plan that persists across interactions.\
+\
+To bridge these intelligence gaps, the MetaGPT paper advocate for drawing inspiration from the modular design of the human brain. This includes introducing independent memory storage modules, explicit world models, hierarchical planning and execution units, and even simulating basic emotional and motivational mechanisms. By enabling these modules to collaborate, AI systems could move toward architectures that more closely resemble biological intelligence.\
+\
+In other words, these issues might be addressed by incorporating multi-agent approaches\'97especially when the problem can be clearly defined. This is also why Shunyu Yao emphasizes the importance of environment and evaluation.\
+\
+The analyses above point to several conclusions:\
+\
+1.  Under the current paradigm, foundation models are unlikely to cover all application scenarios purely through their "intelligence." They still require adaptation through methods like RFT, inference-time techniques, multi-agent frameworks, or additional harnesses to make them viable in real-world use cases\'97just like Gemini needed assistance to complete the Pok\'e9mon game.\
+2.  Beyond raw capability, the "intelligence" produced by the modular approach may not be very efficient. It's a bit like in The Three-Body Problem, where a phalanx of soldiers is used as a giant human computer: while it technically works, the cost and latency make it impractical.\
+3.  Based on the current recipe, expecting an "Einstein" to emerge within nine years seems unrealistic.\
+\
+That said, it's entirely possible that new recipes are already quietly taking shape somewhere.\
+\
+## The Era of Experience and Beyond\
+\
+> 'There is no compression algorithm for experience'\
+\
+Andy Jassy\
+\
+There is a famous thought experiment in Ex Machina, the movie: Mary, a scientist raised in a black-and-white room, knows all the physics of color but has never seen red. Only when she steps outside and experiences color directly does she truly understand it. By analogy, AI today has all the "book knowledge" (training data) but hasn\'92t actually experienced the world.\
+\
+So maybe the way to close the gaps in general comes from Welcome to the Era of Experience\\[16\\], in which Silver & Sutton propose that to transcend the limits of human-fed data, agents must gain knowledge by interacting with an environment. They outline three stages of AI progress. The first is the Simulation Era (AlphaGo learning Go rules in self-play). The second is the Human-Data Era (GPT-like models learning from text on the Internet). The third would be the Experience Era, where AI learns by doing in real or simulated worlds. In this era, an agent isn\'92t driven by a fixed static dataset but by the feedback from its actions. As Sutton and Silver put it, future agents "will be motivated by their experience of the environment, not human judgement".\
+\
+Concretely, they argue that agents of the Experience Era must have several key traits:\
+\
+*   Long-term, self-determined goals: Instead of executing one-shot instructions, the agent should set its own ambitious goals and pursue them persistently. It should plan like a researcher or engineer, working year after year toward a vision. For example, a medical AI might autonomously decide "discover a new cure for disease X" and continually experiment toward that goal.\
+*   Learning from environment feedback: The agent must learn not just from human ratings but from real trial-and-error. Just as animals evolve by experiencing outcomes, the AI should perform actions and see what happens. For instance, a robot trying different ways to walk adjusts based on whether it falls or progresses.\
+*   Open-ended, evolving data: The training data should come from the agent\'92s own ongoing interactions, not a fixed dataset. Sutton emphasizes avoiding "static synthetic data generators". Instead, the world itself should provide ever-new challenges, increasing in difficulty as the agent improves (much like game levels up, ensuring the agent is always slightly beyond its comfort zone).\
+*   Autonomous planning and reflection: Crucially, the agent must turn raw experience into knowledge. It should self-reflect and refine its strategy based on what it has learned. This returns to the "cognitive habits" above: learning to reason about experiences and adjust plans accordingly. Silver and Sutton emphasize that agents will need to "plan or reason about the things they experience" \'96 in other words, deep reasoning driven by experience, not blind trial-and-error. This explicitly does not eliminate chain-of-thought; rather, it requires even stronger reasoning to handle the complexity of real environments.\
+\
+The vision of the Experience Era is inspiring but also daunting. The challenges are many. Chief among them is the data efficiency problem. Real-world provide far less learning signal per step than massive text corpora. Having a robot learn to walk by trial could take months or years of real-world trials \'96 famously, one example quipped that training a walking robot might require "a whole power plant" of energy. LLMs, by contrast, can read Wikipedia in hours. Moreover, real-time learning speed is low: an AI on the road needs to drive millions of miles to learn driving, which takes real months or years.\
+\
+sim2real\\[15\\] approaches are proposed to mitigate this. Jim Fan advocate building very high-fidelity simulators so agents can train "faster than real-time," then transfer those skills to the real world. In fact, Fan describes a three-pronged data strategy for embodied AI: combine web-scale data (static and broad), unlimited simulated data (biased but cheap), and limited real-robot data (accurate but expensive). This way an agent begins with what people know, refines through massive virtual practice, and then fine-tunes in reality. Early steps along these lines are promising: simulation-trained robots can now grasp objects and navigate more robustly than purely supervised counterparts.\
+\
+And many other ideas to help agents to learn continuously and to reasoning like human are emerging, just name a few:\
+\
+Geoffrey Hinton\'92s Forward-Forward algorithm\\[17\\] has been proposed as a learning rule without backpropagation. It replaces the usual backprop training by running two forward passes (one on real data, one on generated negative data) and adjusting weights so that each layer shows high "goodness" on positives and low on negatives. If realized efficiently, this could allow an agent to learn online from streaming sensor data without the heavy machinery of gradient descent at every step.\
+\
+Meta has explored "continuous latent reasoning" as a complement to text chains-of-thought.\
+\
+In their COCONUT paradigm\\[18\\] ("Chain of Continuous Thought"), the model reasons in a continuous latent space rather than outputting all reasoning in language. Special markers switch it between language and latent modes, allowing it to perform breadth-first or backtracking searches in "thought space". In practical terms, Meta introduced Large Concept Models (LCMs)\\[19\\] which operate over high-level concepts instead of word tokens. These approaches aim to make reasoning more efficient.\
+\
+Regarding time temporal cognition, Llion Jones (one of Transformer authors) just proposed Continuous Thought Machine\\[20\\], "an AI model that uniquely uses the synchronization of neuron activity as its core reasoning mechanism... uses timing information at the neuron level that allows for more complex neural behavior and decision-making processes", making its reasoning process more human like.\
+\
+## Conclusion\
+\
+We are indeed standing at another pivotal point in AI development.\
+\
+The LLM training pipeline\'97large-scale pre-training, post-training, and fine-tuning\'97still has considerable room for growth. With larger models, more computing power, and refined fine-tuning techniques, we can expect models to evolve from today's 20-step reasoning processes with a dozen tools to hundreds of reasoning steps and the orchestration of 100+ tools.\
+\
+However, numerous studies and experiments point to the limitations of the sawtooth intelligence produced by existing paradigm. Much like in The Three-Body Problem, where humanity could build sub-light-speed spacecraft but remained limited in the real world without fundamental scientific breakthroughs, AI must move into its "second half"\'97shifting from human outputs toward autonomous experience. The focus of reinforcement learning is moving from algorithmic innovation to creating RL-friendly environments where agents can learn continuously from real-world feedback. We're seeing new explorations across training data, model architectures, and methodologies\'97from sim2real and concept models to forward-forward and continuous thought machines\'97all aimed at accelerating this process.\
+\
+The general recipe is incredible, but it's time to shift toward the experience era.\
+\
+## References\
+\
+\\[1\\] Yao, S. (2025). The Second Half. Retrieved from [https://ysymyth.github.io/The-Second-Half/](https://ysymyth.github.io/The-Second-Half/)\
+\
+\\[2\\] Sequoia AI Ascent 2025, Retrieved from [https://www.youtube.com/playlist?list=PLOhHNjZItNnMEqGLRWkKjaMcdSJptkR08](https://www.youtube.com/playlist?list=PLOhHNjZItNnMEqGLRWkKjaMcdSJptkR08)\
+\
+\\[3\\] Karpathy, A. (2025). Deep Dive Into LLMs \\[Video\\]. YouTube. Retrieved from [https://www.youtube.com/watch?v=7xTGNNLPyMI](https://www.youtube.com/watch?v=7xTGNNLPyMI)\
+\
+\\[4\\] Birkins, J. (2025). Deep Dive into OpenAI's Reinforcement Fine-Tuning (RFT). Medium. Retrieved from [https://medium.com/@joycebirkins/deep-dive-into-openais-reinforcement-fine-tuning-rft-step-by-step-guide-comparison-to-b0692743d079](https://medium.com/@joycebirkins/deep-dive-into-openais-reinforcement-fine-tuning-rft-step-by-step-guide-comparison-to-b0692743d079)\
+\
+\\[5\\] Gibson, E. (2025). Human Language, Psycholinguistics, Syntax, Grammar & LLMs \\[Podcast\\]. Lex Fridman Podcast #426. Retrieved from [https://lexfridman.com/edward-gibson/](https://lexfridman.com/edward-gibson/)\
+\
+\\[6\\] Silberling, A. (2025, March 1). Anthropic's Claude AI is playing Pok\'e9mon on Twitch \'97 slowly. Adafruit Blog. Retrieved from [https://blog.adafruit.com/2025/03/01/anthropics-claude-ai-is-playing-pokemon-on-twitch-slowly/](https://blog.adafruit.com/2025/03/01/anthropics-claude-ai-is-playing-pokemon-on-twitch-slowly/)\
+\
+\\[7\\] Schwartz, E. H. (2025). Google's Gemini AI Is now a Pok\'e9mon Master. TechRadar. Retrieved from [https://www.techradar.com/computing/artificial-intelligence/googles-gemini-ai-is-now-a-pokemon-master](https://www.techradar.com/computing/artificial-intelligence/googles-gemini-ai-is-now-a-pokemon-master)\
+\
+\\[8\\] (2025, May). Why Google Gemini's Pok\'e9mon success isn't all it's cracked up to be. Ars Technica. Retrieved from [https://arstechnica.com/ai/2025/05/why-google-geminis-pokemon-success-isnt-all-its-cracked-up-to-be/](https://arstechnica.com/ai/2025/05/why-google-geminis-pokemon-success-isnt-all-its-cracked-up-to-be/)\
+\
+\\[9\\] Gandhi, K., et al. (2025). Cognitive Behaviors that Enable Self-Improving Reasoners, or, Four Habits of Highly Effective STaRs. arXiv:2503.01307.\
+\
+\\[10\\] Yue, Y., et al. (2025). Does RL Really Incentivize Reasoning Beyond the Base Model? arXiv:2504.13837.\
+\
+\\[11\\] Lindsey, J., et al. (2025). On the Biology of a Large Language Model. Transformer Circuits. Retrieved from [https://transformer-circuits.pub/2025/attribution-graphs/biology.html](https://transformer-circuits.pub/2025/attribution-graphs/biology.html)\
+\
+\\[12\\] Vaswani, A., et al. (2025). Rethinking Reflection in Pre-Training. arXiv:2504.04022.\
+\
+\\[13\\] Zeff, M. (2025, March 19). The AI leaders bringing the AGI debate down to Earth. TechCrunch. Retrieved from [https://techcrunch.com/2025/03/19/the-ai-leaders-bringing-the-agi-debate-down-to-earth/](https://techcrunch.com/2025/03/19/the-ai-leaders-bringing-the-agi-debate-down-to-earth/)\
+\
+\\[14\\] Liu, B., et al. (2025). Advances and Challenges in Foundation Agents (MetaGPT Survey). arXiv:2504.01990.\
+\
+\\[15\\] Fan, J. (2025). The Physical Turing Test: Jim Fan on Nvidia's Roadmap for Embodied AI \\[Video\\]. Sequoia Capital. Retrieved from [https://www.youtube.com/watch?v=\\_2NijXqBESI](https://www.youtube.com/watch?v=_2NijXqBESI)\
+\
+\\[16\\] Silver, D., & Sutton, R. (2025). Welcome to the Era of Experience. Retrieved from [https://storage.googleapis.com/deepmind-media/Era-of-Experience](https://storage.googleapis.com/deepmind-media/Era-of-Experience) /The Era of Experience Paper.pdf\
+\
+\\[17\\] (2025). Is 'The Era of Experience' Upon Us? TechRepublic. Retrieved from [https://www.techrepublic.com/article/news-ai-era-experience-silver-sutton/](https://www.techrepublic.com/article/news-ai-era-experience-silver-sutton/)\
+\
+\\[18\\] Hinton, G. (2025). The Forward-Forward Algorithm: Some Preliminary Investigations. University of Toronto. Retrieved from [https://www.cs.toronto.edu/~hinton/FFA13.pdf](https://www.cs.toronto.edu/~hinton/FFA13.pdf)\
+\
+\\[19\\] Meta's COCONUT: Better alternate than Chain Of Thoughts for LLM reasoning. (2025). Medium. Retrieved from [https://medium.com/data-science-in-your-pocket/metas-coconut-better-alternate-than-chain-of-thoughts-for-llm-reasoning-9634f9a070eb](https://medium.com/data-science-in-your-pocket/metas-coconut-better-alternate-than-chain-of-thoughts-for-llm-reasoning-9634f9a070eb)\
+\
+\\[20\\] Large Concept Models: A Guide With Examples. (2025). DataCamp. Retrieved from [https://www.datacamp.com/blog/large-concept-models](https://www.datacamp.com/blog/large-concept-models)\
+\
+\\[21\\] Jones, L. (2025). Introducing Continuous Thought Machines. Sakana AI. Retrieved from [https://sakana.ai/ctm/](https://sakana.ai/ctm/)}
